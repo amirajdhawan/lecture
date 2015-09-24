@@ -1,7 +1,11 @@
 0.  How much time did you spend on this pre-class exercise, and when?
+    ~65 mins on 09/24 at 3:30 AM (Before the class)
 
 1.  What are one or two points that you found least clear in the
     9/24 slide decks (including the narration)?
+
+    1. Linked List Code in the OpenMP slides
+    2. Sharing slide in HW concerns - Did not False Sharing
 
 2.  The omp_mc.c file in the demo subdirectory runs a Monte Carlo
     simulation to estimate the expected value of a uniform random
@@ -13,25 +17,38 @@
        time per trial (t_trial), and time to update the global
        counters in the critical section (t_update).
        
-       (N/P)*t_trail + t_update*(N/Batch) - Batch is the no of trails in each batch
+      (N/p * t_trail) + (N/batches * t_update)
 
     b) Run the code with a few different parameter values in order
        to estimate N, t_trial, and t_update for this code on
        a totient compute node.
-       
+
+       -p = 12
+       Experiment 1: -b 1000 -n 1000000 t_exp1 = 7.460809e-02
+       Experiment 2: -b 5000 -n 1000000 t_exp2 = 5.367899e-02
+       Experiment 3: -b 10000 -n 1000000 t_exp3 = 3.774524e-02
+
        [N/B1    N/P]    [t_update]    ~=    [t_exp1]
        [N/B2    N/P]    [t_trail]           [t_exp2]
        [N/B3    N/P]                        [t_exp3]
+       => Ax = b => x = A \ b
+       [t_update]     ~=    [3.5283e-05] 
+       [t_trail]            [4.8066e-07]
 
-       Noise casues distorted results and we missed some components in the Model thus it is good to
-       do more than just 2 trails
 
     c) Based on your model, suggest a strategy for choosing the batch
        size.  How might you generalize this strategy to automatically
        choose batch sizes for different types of computational
        experiments?
+       Take a batch size which ensures that (N/batches * t_update) << (N * t_trail) - (N/p * t_trail).
+       Not sure about how to automate this.
 
 3.  The "OpenMP pitfalls" paper describes some common pitfalls (both
     performance and correctness) in OpenMP codes.  Go through the
     checklist in the paper for omp_mc.c.  What performance mistakes
     are there in the demonstration implementation?
+
+    1. #pragma omp critical seed = random can be added in an atomic block? Not sure
+    2. #pragma omp single nthreads = omp_get_num_threads(); can be remove since we are not using the number of threads 
+       (for eg for any manual work distribution)
+    3. Shouldn't we be setting the value of omp_set_num_threads when nthreads is not equal to 0?

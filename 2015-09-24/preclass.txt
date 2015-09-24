@@ -12,10 +12,19 @@
        terms of the number of trials (N), number of processors (p),
        time per trial (t_trial), and time to update the global
        counters in the critical section (t_update).
+       
+       (N/P)*t_trail + t_update*(N/Batch) - Batch is the no of trails in each batch
 
     b) Run the code with a few different parameter values in order
        to estimate N, t_trial, and t_update for this code on
        a totient compute node.
+       
+       [N/B1    N/P]    [t_update]    ~=    [t_exp1]
+       [N/B2    N/P]    [t_trail]           [t_exp2]
+       [N/B3    N/P]                        [t_exp3]
+
+       Noise casues distorted results and we missed some components in the Model thus it is good to
+       do more than just 2 trails
 
     c) Based on your model, suggest a strategy for choosing the batch
        size.  How might you generalize this strategy to automatically

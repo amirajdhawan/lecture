@@ -24,14 +24,14 @@
 /*
  * Lock on standard output
  */
-pthread_mutex_t io_lock;
+ pthread_mutex_t io_lock;
 
 
 /*
  * Protected printf
  */
-void lprintf(const char* format, ...)
-{
+ void lprintf(const char* format, ...)
+ {
     va_list args;
     va_start(args, format);
     pthread_mutex_lock(&io_lock);
@@ -48,7 +48,7 @@ void lprintf(const char* format, ...)
  * task.  If this was a C++ program, I would use a template here to
  * allow different data types.
  */
-typedef struct task_t {
+ typedef struct task_t {
     void* data;
     struct task_t* next;
 } task_t;
@@ -64,19 +64,19 @@ typedef struct task_t {
  * logic and set the "done" flag.  In very dynamic situations, deciding
  * when no more tasks will be produced is itself not trivial.
  */
-typedef struct workq_t {
+ typedef struct workq_t {
     pthread_mutex_t lock;  /* Mutex for queue invariants */
     pthread_cond_t cv;     /* Signal for work ready / finalize */
     int done;              /* Flag that work queue is closed up */
     task_t* tasks;         /* Linked list of tasks */
-} workq_t;
+ } workq_t;
 
 
 /*
  * Set up the work queue
  */
-void workq_init(workq_t* workq)
-{
+ void workq_init(workq_t* workq)
+ {
     pthread_mutex_init(&(workq->lock), NULL);
     pthread_cond_init(&(workq->cv), NULL);
     workq->done = 0;
@@ -88,8 +88,8 @@ void workq_init(workq_t* workq)
  * Destroy the work queue
  * NB: This should be done in a serial section when all threads are joined!
  */
-void workq_destroy(workq_t* workq)
-{
+ void workq_destroy(workq_t* workq)
+ {
     pthread_cond_destroy(&(workq->cv));
     pthread_mutex_destroy(&(workq->lock));
 }
@@ -98,8 +98,8 @@ void workq_destroy(workq_t* workq)
 /*
  * Lock the work queue
  */
-void workq_lock(workq_t* workq)
-{
+ void workq_lock(workq_t* workq)
+ {
     pthread_mutex_lock(&(workq->lock));
 }
 
@@ -107,8 +107,8 @@ void workq_lock(workq_t* workq)
 /*
  * Unlock the work queue
  */
-void workq_unlock(workq_t* workq)
-{
+ void workq_unlock(workq_t* workq)
+ {
     pthread_mutex_unlock(&(workq->lock));
 }
 
@@ -117,8 +117,8 @@ void workq_unlock(workq_t* workq)
  * Signal work available or all work done.
  * Wakes at most one waiting thread.
  */
-void workq_signal(workq_t* workq)
-{
+ void workq_signal(workq_t* workq)
+ {
     pthread_cond_signal(&(workq->cv));
 }
 
@@ -127,8 +127,8 @@ void workq_signal(workq_t* workq)
  * Signal work available or all work done.
  * Wakes all waiting threads
  */
-void workq_broadcast(workq_t* workq)
-{
+ void workq_broadcast(workq_t* workq)
+ {
     pthread_cond_broadcast(&(workq->cv));
 }
 
@@ -137,8 +137,8 @@ void workq_broadcast(workq_t* workq)
  * Wait for work available or all work done
  * Precondition: The queue should be locked before calling workq_wait.
  */
-void workq_wait(workq_t* workq)
-{
+ void workq_wait(workq_t* workq)
+ {
     while (workq->tasks == NULL && workq->done == 0)
         pthread_cond_wait(&(workq->cv), &(workq->lock));
 }
@@ -148,12 +148,16 @@ void workq_wait(workq_t* workq)
  * Add work to the queue
  * TODO: This needs synchronization!
  */
-void workq_put(workq_t* workq, void* data)
-{
+ void workq_put(workq_t* workq, void* data)
+ {
     task_t* task = (task_t*) malloc(sizeof(task_t));
     task->data = data;
+    workq_lock(workq);
+    workq_wait(workq);
     task->next = workq->tasks;
     workq->tasks = task;
+    workq_signal(workq);
+    workq_unlock(workq);
 }
 
 
@@ -162,15 +166,18 @@ void workq_put(workq_t* workq, void* data)
  * to signal that the queue is empty.
  * TODO: This needs synchronization!
  */
-void* workq_get(workq_t* workq)
-{
+ void* workq_get(workq_t* workq)
+ {
     void* result = NULL;
+    workq_lock(workq);
+    workq_wait(workq);
     if (workq->tasks) {
         task_t* task = workq->tasks;
         result = task->data;
         workq->tasks = task->next;
         free(task);
     }
+    workq_unlock(workq);
     return result;
 }
 
@@ -181,9 +188,12 @@ void* workq_get(workq_t* workq)
  *     We're just saying that we're done adding new tasks.
  * TODO: This needs synchronization!
  */
-void workq_finish(workq_t* workq)
-{
-    workq->done = 1;
+ void workq_finish(workq_t* workq)
+ {
+   workq_lock(workq);
+   workq_wait(workq);
+   workq->done = 1;
+   workq_unlock(workq);
 }
 
 
@@ -194,8 +204,8 @@ void workq_finish(workq_t* workq)
  * Producer main routine.  We assume that there is only one producer
  * in this example -- otherwise we couldn't just call workq_finish.
  */
-void producer_main(workq_t* workq, int nitems)
-{
+ void producer_main(workq_t* workq, int nitems)
+ {
     int i;
     for (i = 0; i < nitems; ++i) {
         char buf[256];
@@ -209,26 +219,26 @@ void producer_main(workq_t* workq, int nitems)
 /*
  * Consumer input data type
  */
-typedef struct consumer_t {
+ typedef struct consumer_t {
     int id;            /* Unique identifier for consumer */
     workq_t* workq;    /* Work queue object              */
-} consumer_t;
+ } consumer_t;
 
 
 /*
  * Consumer thread main.
  */
-void* consumer_main(void* arg)
-{
+ void* consumer_main(void* arg)
+ {
     consumer_t* consumer = (consumer_t*) arg;
     workq_t* workq = consumer->workq;
     for (char* t = (char*) workq_get(workq);
-         t != NULL;
-         t = (char*) workq_get(workq)) {
+     t != NULL;
+     t = (char*) workq_get(workq)) {
         lprintf("Process %d: %s\n", consumer->id, t);
-        free(t);
-    }
-    return NULL;
+    free(t);
+}
+return NULL;
 }
 
 

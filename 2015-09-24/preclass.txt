@@ -48,7 +48,7 @@
     checklist in the paper for omp_mc.c.  What performance mistakes
     are there in the demonstration implementation?
 
-    1. #pragma omp critical seed = random can be added in an atomic block? Not sure
+    1. Multiple unnamed critical sections, so threads wait for no reason (Critical section for seed=random and one in thread_main)
     2. #pragma omp single nthreads = omp_get_num_threads(); can be remove since we are not using the number of threads 
        (for eg for any manual work distribution)
     3. Shouldn't we be setting the value of omp_set_num_threads when nthreads is not equal to 0?

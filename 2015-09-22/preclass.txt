@@ -11,9 +11,10 @@
     while "-b" sets the number of trials between synchronizations.
 
     a) Write a model for the run time for this simulation code in
-       terms of the number of trials (N), number of processors (p),
-       time per trial (t_trial), and time to update the global
-       counters in the critical section (t_update).
+       terms of the number of trials (N), batch size (B),
+       number of processors (p), time per trial (t_trial), 
+       and time to update the global counters in the critical 
+       section (t_update).
 
 	     (N/P)*t_trail + t_update*(N/Batch) - Batch is the no of trails in each batch
 

@@ -8,13 +8,24 @@
     you should use a script to produce this plot, with both the serial
     fraction and the maximum number of cores as parameters.
 
+    Plots can be found with filenames speedup.png and efficiency.png.
+    The python script used is also added filename: plot_q1.py.
+
 2.  Suppose a particular program can be partitioned into perfectly
     independent tasks, each of which takes time tau.  Tasks are
     set up, scheduled, and communicated to p workers at a (serial)
     central server; this takes an overhead time alpha per task.
     What is the theoretically achievable throughput (tasks/time)?
+    
+    N is total no of tasks
+    Total_Time = talpha * N + (N/p) * tau
+    Throughput = No of Tasks / Total_Time
+    Throughput = N / (talpha * N + (N/p) * tau)
+    Throughput = 1 / (talpha + (tau/p))
+
 
 3.  Under what circumstances is it best to not tune?
+    When the serial overhead and communication cost increases faster than the speedup provided by parallelizing the problem. 
 
 4.  The class cluster consists of eight nodes and fifteen Xeon Phi
     accelerator boards.  Based on an online search for information on
@@ -23,5 +34,32 @@
     you computed this, and give URLs for where you got the parameters
     in your calculation.  (We will return to this question again after
     we cover some computer architecture.)
+
+    --Xeon Main Processors
+    2 flops/FMA
+    x4 FMA/vector FMA = 8 flops/vector FMA
+    x2 vector FMA/cycle = 16 flops/cycle/core
+    x6 cores = 96 flops/cycle
+    x3.2 x 10^9 = 307.2 Gflops/processor
+    x2 CPUs = 614.4 GFlops/Cluster node
+
+    x8 Node = 4.91 Teraflops in total
+
+    --Xeon Phi Board
+    x2 flops/FMA
+    x8 FMA/vector FMA = 16 flops/vector FMA
+    x1 vector FMA/cycle = 16 flops/cycle/core
+    x60 cores = 960 flops/cycle
+    x 1.1 x 10^9 = 1.010 Teraflops / phi node
+    x15 nodes = 15.15 Teraflops in total
+
+    Total Process power of the cluster = 4.91 + 15.15 = 20.06 Teraflops
     
 5.  What is the approximate theoretical peak flop rate for your own machine?
+    x2 flops/FMA
+    x8 FMA/vector FMA = 16 flops/vector FMA
+    x2 vector FMA/cycle = 32 flops/cycle/core
+    x4 cores = 128 flops/cycle
+    x 3.6 x 10^9 = 460.8 GFlops
+
+    ~460.8 GFlops

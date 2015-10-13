@@ -18,6 +18,20 @@ In practice, this took X time.  This includes
 Consider the following questions:
 
 1. What is a simple model that would predict this time?
-2. What about a simple model to predict time for one person to count?
-3. How big should the class be before the parallel method takes less time?
+	Tpm = Time for Parallel Model
+	Tserial = Time taken to perform the serial part (In this case Time to start the process, Time for the instructor to gather counts, Time for instructor to do the arithmetic)
+	Tparallel = Time taken to perform the parallel part (In this case worst case time taken to compute the row counts)
+	
+	Tpm = Tserial/overhead + Tparallel
 
+2. What about a simple model to predict time for one person to count?
+	Tsm = Time for Serial Model
+	Tsm = Time to count one person * No of people in the class
+	
+	In general.. Tsm = Time to perform one iteration * No of iterations
+
+	In this case Tsm will be equal to Tparallel for this problem
+
+3. How big should the class be before the parallel method takes less time?
+	Tpm can be decomposed into 2 parts, Time taken for the Parallel part and time taken for the serial overhead (In this case Time to start the process, Time for the instructor to gather counts, Time for instructor to do the arithmetic). With the growing class size, the Tsm will grow linearly but in Tpm only the Tserial will grow (Tparallel - worst time to calculate no of people in 1 row will remain constant).
+	The class size should be enough so that this Tserial component is worth the speedup provided by Tparallel.
